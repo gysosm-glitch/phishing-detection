@@ -1,0 +1,33 @@
+name: 피싱 데이터 자동 수집
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 매일 오전 9시 (KST = UTC+9)
+  workflow_dispatch:       # 수동 실행 버튼
+
+jobs:
+  collect-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 레포 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 라이브러리 설치
+        run: pip install requests pandas
+
+      - name: 피싱 데이터 수집
+        run: python scripts/collect_daily.py
+
+      - name: 변경사항 커밋 & 푸시
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/
+          git diff --staged --quiet || git commit -m "자동 수집: $(date '+%Y-%m-%d') 피싱 데이터 업데이트"
+          git push
